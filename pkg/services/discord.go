@@ -329,7 +329,7 @@ func makeDescription(url, description string, tags []string, title, provider str
 	}
 
 	if len(title) > 95 {
-		result.WriteString(fmt.Sprintf("**Полный заголовок**: %s\n\n", title))
+		result.WriteString(fmt.Sprintf("# %s\n\n", title))
 	}
 
 	if len(description) > 3800 {
@@ -337,10 +337,10 @@ func makeDescription(url, description string, tags []string, title, provider str
 	}
 	result.WriteString(description)
 
-	if !withImage {
-		result.WriteString(fmt.Sprintf("\n\n**Источник**: %s — %s", provider, url))
+	if withImage {
+		result.WriteString(fmt.Sprintf("\n\n[Подробнее](<%s>) `🔒 %s`", url, provider))
 	} else {
-		result.WriteString(fmt.Sprintf("\n\n**Источник**: %s — <%s>", provider, url))
+		result.WriteString(fmt.Sprintf("\n\n[Подробнее](%s) `🔒 %s`", url, provider))
 	}
 
 	return result.String()
