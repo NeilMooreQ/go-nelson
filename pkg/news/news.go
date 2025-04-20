@@ -13,7 +13,7 @@ func StartNewsParser() {
 	log.Println("Запуск парсера новостей")
 	parseAllSources()
 
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 	defer ticker.Stop()
 
 	for range ticker.C {
