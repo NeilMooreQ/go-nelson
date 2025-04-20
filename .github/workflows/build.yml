@@ -42,7 +42,6 @@ jobs:
           fi
           go build -o "$OUTPUT"
           echo "output_file=$OUTPUT" >> $GITHUB_OUTPUT
-      
 
       - name: Run tests
         run: go test ./...
@@ -52,7 +51,6 @@ jobs:
         with:
           name: ${{ matrix.os }}-build
           path: ${{ steps.build.outputs.output_file }}
-      
 
   release:
     runs-on: ubuntu-latest
@@ -92,6 +90,8 @@ jobs:
           asset_path: ./artifacts/ubuntu-latest-build/go-nelson
           asset_name: go-nelson-linux-amd64
           asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Windows binary
         uses: actions/upload-release-asset@v1
@@ -100,3 +100,5 @@ jobs:
           asset_path: ./artifacts/windows-latest-build/go-nelson.exe
           asset_name: go-nelson-windows-amd64.exe
           asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
