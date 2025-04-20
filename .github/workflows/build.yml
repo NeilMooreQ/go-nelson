@@ -33,14 +33,15 @@ jobs:
         run: go mod tidy
 
       - name: Build
+        id: build
         run: |
           OUTPUT=go-nelson
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             OUTPUT="${OUTPUT}.exe"
           fi
-          go build -o $OUTPUT
-          echo "OUTPUT=$OUTPUT" >> $GITHUB_ENV
-          echo "OUTPUT_NAME=$OUTPUT" >> $GITHUB_OUTPUT
+          go build -o "$OUTPUT"
+          echo "output_file=$OUTPUT" >> $GITHUB_OUTPUT
+      
 
       - name: Run tests
         run: go test ./...
@@ -49,7 +50,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-build
-          path: ${{ steps.build.outputs.OUTPUT_NAME }}
+          path: ${{ steps.build.outputs.output_file }}
+      
 
   release:
     runs-on: ubuntu-latest
