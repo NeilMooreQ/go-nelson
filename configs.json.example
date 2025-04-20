@@ -1,0 +1,30 @@
+{
+  "discord": {
+    "token": "YOUR_DISCORD_BOT_TOKEN",
+    "news_forum_id": "YOUR_DISCORD_GUILD_ID",
+    "enabled": true
+  },
+  "telegram": {
+    "token": "YOUR_TELEGRAM_BOT_TOKEN",
+    "channel_id": "YOUR_TELEGRAM_CHANNEL_ID",
+    "enabled": true
+  },
+  "mongodb": {
+    "uri": "mongodb://localhost:27017",
+    "database": "news_bot",
+    "collection": "news"
+  },
+  "google_aistudio": {
+    "api_key": "YOUR_API_KEY"
+  },
+  "parsers": {
+    "3dnews": true,
+    "disgustingmen": true,
+    "dtf": true,
+    "epicgames": true,
+    "gamedevru": true,
+    "ixbt": true,
+    "steam_developers": true,
+    "stopgame": true
+  }
+} 

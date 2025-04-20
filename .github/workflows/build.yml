@@ -1,0 +1,35 @@
+name: Go Build
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build
+        run: go build -o go-nelson.exe
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-nelson-windows
+          path: go-nelson.exe
