@@ -2,13 +2,24 @@ name: Go Build
 
 on:
   push:
-    branches: [ master, main ]
+    branches:
+      - master
+      - main
   pull_request:
-    branches: [ master, main ]
+    branches:
+      - master
+      - main
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -22,14 +33,66 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Tidy modules
+        run: go mod tidy
+
       - name: Build
-        run: go build -o go-nelson.exe
+        run: |
+          OUTPUT=go-nelson
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            OUTPUT="${OUTPUT}.exe"
+          fi
+          go build -o $OUTPUT
+          echo "OUTPUT=$OUTPUT" >> $GITHUB_ENV
 
       - name: Run tests
         run: go test ./...
 
-      - name: Upload artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: go-nelson-windows
-          path: go-nelson.exe
+          name: go-nelson-${{ matrix.os }}
+          path: go-nelson-${{ matrix.os }}.exe
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate tag
+        id: generate_tag
+        run: |
+          TAG=$(date +v%Y%m%d-%H%M%S)  # Формируем тег по дате
+          echo "Generated tag: $TAG"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.TAG }}
+          release_name: Release ${{ env.TAG }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset for Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: go-nelson
+          asset_name: go-nelson-linux-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Asset for Windows
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: go-nelson.exe
+          asset_name: go-nelson-windows-amd64.exe
+          asset_content_type: application/octet-stream
