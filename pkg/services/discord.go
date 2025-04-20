@@ -205,7 +205,8 @@ func sendToDiscordWithRateLimiting(news structures.News) error {
 		threadParams.AppliedTags = []string{tagID}
 	}
 
-	description := makeDescription(news.URL, news.Description, news.Tags, news.Title, news.Provider, len(news.Images) > 0)
+	// Подготовка контента
+	description := makeDescription(news.URL, news.Description[:min(1800, len(news.Description))], news.Tags, news.Title, news.Provider, len(news.Images) > 0)
 
 	messageSend := &discordgo.MessageSend{
 		Content: description,
@@ -215,10 +216,30 @@ func sendToDiscordWithRateLimiting(news structures.News) error {
 		processAndAttachImage(news.Images[0], messageSend)
 	}
 
-	_, err := discordSession.ForumThreadStartComplex(pkg.Discord.NewsForumId, threadParams, messageSend)
+	thread, err := discordSession.ForumThreadStartComplex(pkg.Discord.NewsForumId, threadParams, messageSend)
 	if err != nil {
 		log.Printf("Ошибка создания треда для новости '%s': %v", news.Title, err)
 		return err
+	}
+
+	// Отправка дополнительных частей длинного описания, если оно больше 1800 символов
+	if len(news.Description) > 1800 {
+		// Разделяем оставшуюся часть на фрагменты по 2000 символов
+		remainingParts := splitLongText(news.Description[min(1800, len(news.Description)):], 2000)
+
+		for _, part := range remainingParts {
+			if part == "" {
+				continue
+			}
+
+			_, err := discordSession.ChannelMessageSend(thread.ID, part)
+			if err != nil {
+				log.Printf("Ошибка отправки дополнительной части описания в тред '%s': %v", news.Title, err)
+			}
+
+			// Небольшая задержка для предотвращения ошибок рейт-лимита
+			time.Sleep(500 * time.Millisecond)
+		}
 	}
 
 	return nil
@@ -332,8 +353,9 @@ func makeDescription(url, description string, tags []string, title, provider str
 		result.WriteString(fmt.Sprintf("# %s\n\n", title))
 	}
 
-	if len(description) > 3800 {
-		description = description[:3800] + "..."
+	maxLength := 1800
+	if len(description) > maxLength {
+		description = description[:maxLength] + "..."
 	}
 	result.WriteString(description)
 
@@ -344,4 +366,46 @@ func makeDescription(url, description string, tags []string, title, provider str
 	}
 
 	return result.String()
+}
+
+func splitLongText(text string, maxLength int) []string {
+	if len(text) <= maxLength {
+		return []string{text}
+	}
+
+	var parts []string
+	remaining := text
+
+	for len(remaining) > 0 {
+		if len(remaining) <= maxLength {
+			parts = append(parts, remaining)
+			break
+		}
+
+		// Ищем последний пробел или перенос строки в пределах maxLength
+		splitPos := maxLength
+		for i := maxLength; i > 0; i-- {
+			if remaining[i] == ' ' || remaining[i] == '\n' {
+				splitPos = i
+				break
+			}
+		}
+
+		parts = append(parts, remaining[:splitPos])
+		if splitPos+1 <= len(remaining) {
+			remaining = remaining[splitPos+1:]
+		} else {
+			break
+		}
+	}
+
+	return parts
+}
+
+// Вспомогательная функция для нахождения минимального из двух значений
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
