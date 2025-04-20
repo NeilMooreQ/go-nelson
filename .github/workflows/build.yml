@@ -34,6 +34,7 @@ jobs:
 
       - name: Build
         id: build
+        shell: bash
         run: |
           OUTPUT=go-nelson
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
